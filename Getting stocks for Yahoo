@@ -1,0 +1,14 @@
+#This code can be used to extract stocsk from Yahoo Finance
+# We will be using quant mod for this example.
+#How to install quad mod?
+# install.packages("quant mod")
+# Code to get code in R from Yahoo
+library(quantmod) #loads the library in R
+loadSymbols (c("AMZ","MSFT","SNDL")) #use can use any symbol you like
+head(SNDL)
+head(MSFT)
+#The head command will label charts with the stock name
+chartSeries(SNDL)
+chartSeries(MSFT)
+#They will provide basic open, high, low, close, volume charts
+#These commands are a good way to set up your stocks and them do further analysis on them.
