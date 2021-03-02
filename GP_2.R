@@ -1,0 +1,66 @@
+#Let's load two raw data file diff_wage and LFP
+library(moments)
+library(dplyr)
+diff_wage <- read.csv("Wage_gap_GP.csv" , header= TRUE)
+LFP <- read.csv("LFPFemale.csv", header=TRUE)
+colnames(diff_wage)[colnames(diff_wage) == "LES1252881900Q_LES1252882800Q"] <- "Wage gap"
+names(diff_wage)
+#It is important to note that the wage gap is the difference in wage of men - women 
+colnames(LFP)[colnames(LFP) == "LNS11300002"] <- "percent_women"
+names(LFP)
+#Where percent women means the percentage of women in the labor force
+#Datatotal is the merged version of both diff_wage and LFP 
+Datatotal<-merge(diff_wage, LFP, by=c("DATE"))
+#Finding a better suited regression line using quadratic equations 
+childU6 <- read.csv("WomenwithchildU6.csv", header= TRUE)
+Marriedwomen <- read.csv("Womenwithspouse.csv", header= TRUE)
+Datatotal <- merge(Datatotal,Marriedwomen, by=c("DATE"))
+library(sandwich)
+library(lmtest)
+ols.fit <- lm(`Wage gap` ~ percent_women , data = Datatotal)
+summary(ols.fit)
+ols.fit1 <- lm(`Wage gap` ~ percent_women + I(percent_women^2), data=Datatotal)
+summary(ols.fit1)
+ols.fit2 <- lm(`Wage gap` ~ percent_women + I(percent_women^2) + I(percent_women^3), data = Datatotal)
+summary(ols.fit2)
+ttest1 <- coeftest(ols.fit, vcov= vcovHC(ols.fit, "HC1"))
+ttest2 <- coeftest(ols.fit, vcov= vcovHC(ols.fit, "HC1"))
+plot(Datatotal$percent_women, Datatotal$`Wage gap`, cex= 0.5)
+lines(Datatotal$percent_women, fitted(ols.fit1), col="blue")
+lines(Datatotal$percent_women, fitted(ols.fit2), col="red")
+lines(Datatotal$percent_women, fitted(ols.fit), col="black")
+# Conducting a wald test for hypothesis testing 
+hypothesis_test1 <- waldtest(ols.fit2, c("I(percent_women^2)", "I(percent_women^3)"), vcov= vcovHC(ols.fit2, "HC1"))
+hypothesis_test1
+#Finding a better suited regression model using log functions 
+loglinear.ols <- lm(log(`Wage gap`) ~ percent_women, data = Datatotal)
+summary(loglinear.ols)
+linearlog.ols <- lm(`Wage gap`~ log(percent_women), data = Datatotal)
+summary(linearlog.ols)
+loglog.ols <- lm(log(`Wage gap`) ~ log(percent_women), data=Datatotal)
+summary(loglog.ols)
+plot(Datatotal$percent_women, Datatotal$`Wage gap`, cex= 0.5)
+lines(Datatotal$percent_women, fitted(loglinear.ols), col="blue")
+lines(Datatotal$percent_women, fitted(linearlog.ols), col="red")
+lines(Datatotal$percent_women, fitted(loglog.ols), col="black")
+lines(Datatotal$percent_women, fitted(ols.fit), col="green")
+# Interaction between marriage and percent_women
+Datatotal$year <- substr(Datatotal$DATE, 1,4)
+Datatotal$t<-as.numeric(Datatotal$year)-1979
+interaction <- lm(`Wage gap` ~ percent_women + percent_married + t + I(percent_married * t), data= Datatotal)
+summary(interaction)
+interation_ttest <- coeftest(interaction, vcov= vcovHC(interaction, "HC1"))
+interation_ttest
+# With new term
+ols.fit <- lm(`Wage gap` ~ percent_women + percent_married, data = Datatotal)
+summary(ols.fit)
+ols.fit1 <- lm(`Wage gap` ~ percent_women + I(percent_women^2) + percent_married, data=Datatotal)
+summary(ols.fit1)
+ols.fit2 <- lm(`Wage gap` ~ percent_women + I(percent_women^2) + I(percent_women^3) + percent_married, data = Datatotal)
+summary(ols.fit2)
+ttest1 <- coeftest(ols.fit, vcov= vcovHC(ols.fit, "HC1"))
+ttest2 <- coeftest(ols.fit, vcov= vcovHC(ols.fit, "HC1"))
+plot(Datatotal$percent_women, Datatotal$`Wage gap`, cex= 0.5)
+lines(Datatotal$percent_women, fitted(ols.fit1), col="blue")
+lines(Datatotal$percent_women, fitted(ols.fit2), col="red")
+lines(Datatotal$percent_women, fitted(ols.fit), col="black")
